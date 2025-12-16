@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Model Predictor</title>
+    <style>
+        /* --- CSS STYLING (Makes it look clean) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+        h2 { color: #333; margin-bottom: 20px; }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box; /* Ensures padding doesn't widen box */
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #218838; }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="app-title">Price Predictor</h2>
+        
+        <form id="prediction-form">
+            <div id="inputs-container">
+                </div>
+            
+            <button type="submit">Predict</button>
+        </form>
+
+        <div id="result">Prediction: - </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  USER CONFIGURATION - CHANGE THIS PART ONLY
+        // ============================================================
+        
+        // 1. List your Independent Variables (The inputs for your model)
+        // Add or remove items here. The UI will adjust automatically.
+        const MODEL_INPUTS = [
+            { id: "area", label: "Area (sqm)", type: "number", placeholder: "e.g. 50" },
+            { id: "floors", label: "Number of Floors", type: "number", placeholder: "e.g. 2" },
+            { id: "bedrooms", label: "Bedrooms", type: "number", placeholder: "e.g. 3" }
+            // To add more, just copy the line above and change details:
+            // { id: "frontage", label: "Frontage (m)", type: "number", placeholder: "e.g. 5" },
+        ];
+
+        // 2. The URL of your Python Backend (Flask/FastAPI)
+        // If running locally, it is usually http://127.0.0.1:5000/predict
+        const API_URL = "http://127.0.0.1:5000/predict";
+
+        // ============================================================
+        //  LOGIC (DO NOT TOUCH UNLESS YOU KNOW JS)
+        // ============================================================
+
+        const container = document.getElementById('inputs-container');
+
+        // A. Generate Input Boxes dynamically
+        MODEL_INPUTS.forEach(inputConfig => {
+            const group = document.createElement('div');
+            group.className = 'input-group';
+            
+            const label = document.createElement('label');
+            label.innerText = inputConfig.label;
+            label.setAttribute('for', inputConfig.id);
+            
+            const input = document.createElement('input');
+            input.type = inputConfig.type;
+            input.id = inputConfig.id;
+            input.name = inputConfig.id; // Important for gathering data
+            input.placeholder = inputConfig.placeholder;
+            input.required = true;
+
+            group.appendChild(label);
+            group.appendChild(input);
+            container.appendChild(group);
+        });
+
+        // B. Handle Form Submission
+        document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop page from reloading
+
+            // 1. Gather data from inputs
+            let formData = {};
+            MODEL_INPUTS.forEach(field => {
+                formData[field.id] = document.getElementById(field.id).value;
+            });
+
+            // 2. Send to Python Backend
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerText = "Processing...";
+
+            try {
+                // This sends the data to your python code
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+                
+                // 3. Display Result
+                // Assumes backend returns JSON like { "prediction": 500000 }
+                resultDiv.innerText = "Prediction: " + data.prediction; 
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerText = "Error connecting to model.";
+            }
+        });
+    </script>
+</body>
+</html>
